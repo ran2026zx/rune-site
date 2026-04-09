@@ -1,0 +1,775 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Rune — A clean, fast file viewer for the AI era</title>
+  <meta name="description" content="Rune is a lightweight desktop app for reading Markdown, JSON, and code files. Beautiful syntax highlighting, instant open, no bloat.">
+  <meta name="theme-color" content="#c96442">
+  <link rel="icon" type="image/png" href="icon.png">
+  <!-- Open Graph -->
+  <meta property="og:title" content="Rune — File viewer for the AI era">
+  <meta property="og:description" content="A clean, fast desktop app for Markdown, JSON, and 50+ code languages.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://ran2026zx.github.io/rune/">
+  <style>
+    /* ============ Reset & Base ============ */
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --bg: #faf9f7;
+      --bg-alt: #f3f1ee;
+      --bg-card: #ffffff;
+      --text: #2d2b28;
+      --text-secondary: #6b6560;
+      --text-muted: #9b958e;
+      --accent: #c96442;
+      --accent-hover: #b5573a;
+      --accent-light: rgba(201, 100, 66, 0.08);
+      --border: rgba(0, 0, 0, 0.06);
+      --border-strong: rgba(0, 0, 0, 0.1);
+      --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", "Helvetica Neue", sans-serif;
+      --font-mono: "SF Mono", "Fira Code", "JetBrains Mono", Menlo, Consolas, monospace;
+      --max-w: 1080px;
+      --transition: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg: #1c1b1a;
+        --bg-alt: #252422;
+        --bg-card: #2a2826;
+        --text: #e8e4df;
+        --text-secondary: #a09890;
+        --text-muted: #6b6560;
+        --accent: #e07a56;
+        --accent-hover: #c96442;
+        --accent-light: rgba(224, 122, 86, 0.1);
+        --border: rgba(255, 255, 255, 0.06);
+        --border-strong: rgba(255, 255, 255, 0.1);
+      }
+    }
+
+    html {
+      font-family: var(--font-sans);
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+      scroll-behavior: smooth;
+    }
+
+    body { overflow-x: hidden; }
+
+    a { color: var(--accent); text-decoration: none; }
+    a:hover { color: var(--accent-hover); }
+
+    ::selection {
+      background: var(--accent-light);
+      color: var(--text);
+    }
+
+    /* ============ Nav ============ */
+    nav {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 100;
+      background: rgba(250, 249, 247, 0.85);
+      backdrop-filter: blur(20px) saturate(180%);
+      -webkit-backdrop-filter: blur(20px) saturate(180%);
+      border-bottom: 1px solid var(--border);
+    }
+
+    @media (prefers-color-scheme: dark) {
+      nav {
+        background: rgba(28, 27, 26, 0.85);
+      }
+    }
+
+    .nav-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .nav-logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      font-size: 16px;
+      color: var(--text);
+      letter-spacing: -0.02em;
+    }
+
+    .nav-logo svg {
+      width: 24px;
+      height: 24px;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 28px;
+      list-style: none;
+    }
+
+    .nav-links a {
+      font-size: 14px;
+      color: var(--text-secondary);
+      font-weight: 450;
+      transition: color var(--transition);
+    }
+
+    .nav-links a:hover { color: var(--text); }
+
+    .nav-links .btn-sm {
+      background: var(--accent);
+      color: #fff !important;
+      padding: 7px 18px;
+      border-radius: 8px;
+      font-weight: 500;
+      transition: all var(--transition);
+    }
+
+    .nav-links .btn-sm:hover {
+      background: var(--accent-hover);
+      transform: translateY(-1px);
+    }
+
+    /* ============ Hero ============ */
+    .hero {
+      padding: 140px 32px 80px;
+      text-align: center;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 16px;
+      border-radius: 100px;
+      background: var(--accent-light);
+      color: var(--accent);
+      font-size: 13px;
+      font-weight: 500;
+      margin-bottom: 28px;
+      letter-spacing: -0.01em;
+    }
+
+    .hero h1 {
+      font-size: clamp(40px, 6vw, 64px);
+      font-weight: 700;
+      letter-spacing: -0.04em;
+      line-height: 1.1;
+      max-width: 700px;
+      margin: 0 auto 20px;
+    }
+
+    .hero h1 .gradient {
+      background: linear-gradient(135deg, var(--accent) 0%, #d4886e 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero p {
+      font-size: 18px;
+      color: var(--text-secondary);
+      max-width: 520px;
+      margin: 0 auto 40px;
+      line-height: 1.6;
+      letter-spacing: -0.01em;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 550;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition);
+      letter-spacing: -0.01em;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      box-shadow: 0 2px 12px rgba(201, 100, 66, 0.3);
+    }
+    .btn-primary:hover {
+      background: var(--accent-hover);
+      transform: translateY(-2px);
+      box-shadow: 0 4px 20px rgba(201, 100, 66, 0.35);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: var(--bg-alt);
+      color: var(--text);
+      border: 1px solid var(--border-strong);
+    }
+    .btn-secondary:hover {
+      background: var(--bg-card);
+      transform: translateY(-2px);
+      border-color: var(--border-strong);
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    .hero-meta {
+      margin-top: 20px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    /* ============ App Preview ============ */
+    .app-preview {
+      max-width: 900px;
+      margin: 0 auto 40px;
+      padding: 0 32px;
+    }
+
+    .app-window {
+      background: var(--bg-card);
+      border-radius: 16px;
+      border: 1px solid var(--border-strong);
+      overflow: hidden;
+      box-shadow:
+        0 2px 4px rgba(0,0,0,0.02),
+        0 8px 32px rgba(0,0,0,0.06),
+        0 24px 60px rgba(0,0,0,0.08);
+    }
+
+    .app-titlebar {
+      background: var(--bg-alt);
+      padding: 14px 20px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .app-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      background: var(--border-strong);
+    }
+
+    .app-titlebar-text {
+      flex: 1;
+      text-align: center;
+      font-size: 12px;
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+
+    .app-body {
+      display: flex;
+      min-height: 400px;
+    }
+
+    .app-sidebar {
+      width: 200px;
+      background: var(--bg-alt);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+      flex-shrink: 0;
+    }
+
+    .app-sidebar-title {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--text-muted);
+      padding: 0 8px 10px;
+    }
+
+    .app-file {
+      padding: 7px 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .app-file.active {
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .app-file-icon {
+      opacity: 0.4;
+      font-size: 12px;
+    }
+
+    .app-file.active .app-file-icon { opacity: 1; }
+
+    .app-content {
+      flex: 1;
+      padding: 32px 40px;
+      overflow: hidden;
+    }
+
+    .app-content h2 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .app-content p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.7;
+      margin-bottom: 16px;
+    }
+
+    .app-code {
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      font-family: var(--font-mono);
+      font-size: 13px;
+      line-height: 1.6;
+      color: var(--text-secondary);
+      overflow: hidden;
+    }
+
+    .app-code .kw { color: #c96442; }
+    .app-code .fn { color: #6b8e5a; }
+    .app-code .str { color: #a67c53; }
+    .app-code .cm { color: var(--text-muted); }
+
+    @media (prefers-color-scheme: dark) {
+      .app-code .kw { color: #e07a56; }
+      .app-code .fn { color: #8fbf7a; }
+      .app-code .str { color: #d4a76a; }
+    }
+
+    @media (max-width: 640px) {
+      .app-sidebar { display: none; }
+    }
+
+    /* ============ Features ============ */
+    .features {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 80px 32px;
+    }
+
+    .features-header {
+      text-align: center;
+      margin-bottom: 56px;
+    }
+
+    .features-header h2 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .features-header p {
+      font-size: 16px;
+      color: var(--text-secondary);
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+
+    @media (max-width: 768px) {
+      .features-grid { grid-template-columns: 1fr; }
+    }
+
+    .feature-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px 24px;
+      transition: all var(--transition);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-strong);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.04);
+      transform: translateY(-2px);
+    }
+
+    .feature-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 10px;
+      background: var(--accent-light);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 20px;
+    }
+
+    .feature-card h3 {
+      font-size: 16px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+      margin-bottom: 8px;
+    }
+
+    .feature-card p {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+    }
+
+    /* ============ Languages ============ */
+    .languages {
+      background: var(--bg-alt);
+      border-top: 1px solid var(--border);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .languages-inner {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 80px 32px;
+      text-align: center;
+    }
+
+    .languages-inner h2 {
+      font-size: 32px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 12px;
+    }
+
+    .languages-inner > p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 40px;
+    }
+
+    .lang-tags {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 10px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .lang-tag {
+      padding: 8px 16px;
+      border-radius: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-secondary);
+      font-family: var(--font-mono);
+      letter-spacing: -0.01em;
+      transition: all var(--transition);
+    }
+
+    .lang-tag:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .lang-tag.highlight {
+      border-color: var(--accent);
+      color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    /* ============ CTA ============ */
+    .cta {
+      max-width: var(--max-w);
+      margin: 0 auto;
+      padding: 100px 32px;
+      text-align: center;
+    }
+
+    .cta h2 {
+      font-size: 36px;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      margin-bottom: 16px;
+    }
+
+    .cta p {
+      font-size: 16px;
+      color: var(--text-secondary);
+      margin-bottom: 32px;
+      max-width: 420px;
+      margin-left: auto;
+      margin-right: auto;
+      line-height: 1.6;
+    }
+
+    .cta-actions {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    /* ============ Footer ============ */
+    footer {
+      border-top: 1px solid var(--border);
+      padding: 32px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    footer a { color: var(--text-secondary); }
+    footer a:hover { color: var(--accent); }
+
+    /* ============ Animations ============ */
+    @keyframes fadeUp {
+      from { opacity: 0; transform: translateY(24px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .hero h1 { animation: fadeUp 0.6s ease-out; }
+    .hero p { animation: fadeUp 0.6s ease-out 0.1s both; }
+    .hero-actions { animation: fadeUp 0.6s ease-out 0.2s both; }
+    .app-preview { animation: fadeUp 0.8s ease-out 0.3s both; }
+
+    /* ============ Install command ============ */
+    .install-cmd {
+      display: inline-flex;
+      align-items: center;
+      gap: 12px;
+      background: var(--bg-alt);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 20px;
+      font-family: var(--font-mono);
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-top: 24px;
+      cursor: pointer;
+      transition: all var(--transition);
+    }
+
+    .install-cmd:hover {
+      border-color: var(--border-strong);
+      color: var(--text);
+    }
+
+    .install-cmd .dollar {
+      color: var(--text-muted);
+      user-select: none;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav>
+  <div class="nav-inner">
+    <a href="/" class="nav-logo">
+      <svg viewBox="0 0 100 100" fill="none">
+        <rect x="15" y="15" width="70" height="70" rx="8" transform="rotate(45 50 50)" fill="#c96442"/>
+      </svg>
+      Rune
+    </a>
+    <ul class="nav-links">
+      <li><a href="#features">Features</a></li>
+      <li><a href="#languages">Languages</a></li>
+      <li><a href="https://github.com/ran2026zx/rune/releases/latest" class="btn-sm">Download</a></li>
+    </ul>
+  </div>
+</nav>
+
+<!-- Hero -->
+<section class="hero">
+  <div class="hero-badge">
+    <svg width="14" height="14" viewBox="0 0 100 100" fill="none"><rect x="15" y="15" width="70" height="70" rx="8" transform="rotate(45 50 50)" fill="currentColor"/></svg>
+    v0.2.0 — Now with code & JSON support
+  </div>
+  <h1>Read files.<br><span class="gradient">Beautifully.</span></h1>
+  <p>A lightweight desktop app for Markdown, JSON, and code files. Syntax highlighting for 50+ languages. No bloat, no setup, no subscriptions. Free to use.</p>
+  <div class="hero-actions">
+    <a href="https://github.com/ran2026zx/rune/releases/latest" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download for Mac
+    </a>
+  </div>
+  <p class="hero-meta">Apple Silicon (M1/M2/M3/M4) &middot; macOS 10.15+ &middot; Free to use</p>
+</section>
+
+<!-- App Preview -->
+<div class="app-preview">
+  <div class="app-window">
+    <div class="app-titlebar">
+      <div class="app-dot"></div>
+      <div class="app-dot"></div>
+      <div class="app-dot"></div>
+      <div class="app-titlebar-text">README.md &mdash; Markdown</div>
+    </div>
+    <div class="app-body">
+      <div class="app-sidebar">
+        <div class="app-sidebar-title">Project</div>
+        <div class="app-file active"><span class="app-file-icon">&#9671;</span> README.md</div>
+        <div class="app-file"><span class="app-file-icon">&#9671;</span> package.json</div>
+        <div class="app-file"><span class="app-file-icon">&#9671;</span> tsconfig.json</div>
+        <div class="app-file"><span class="app-file-icon">&#9655;</span> src</div>
+        <div class="app-file" style="padding-left:24px"><span class="app-file-icon">&#9671;</span> App.tsx</div>
+        <div class="app-file" style="padding-left:24px"><span class="app-file-icon">&#9671;</span> main.ts</div>
+        <div class="app-file"><span class="app-file-icon">&#9671;</span> Cargo.toml</div>
+        <div class="app-file"><span class="app-file-icon">&#9671;</span> lib.rs</div>
+      </div>
+      <div class="app-content">
+        <h2>Welcome to Rune</h2>
+        <p>A clean, fast reader for Markdown, JSON, and code files — built for the AI era. AI tools produce more Markdown and code every day. Rune is the perfect companion.</p>
+        <div class="app-code">
+          <span class="cm">// Syntax highlighting for 50+ languages</span><br>
+          <span class="kw">function</span> <span class="fn">greet</span>(name: <span class="kw">string</span>) {<br>
+          &nbsp;&nbsp;<span class="kw">return</span> <span class="str">`Hello, ${name}!`</span>;<br>
+          }
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Features -->
+<section class="features" id="features">
+  <div class="features-header">
+    <h2>Everything you need. Nothing you don't.</h2>
+    <p>Designed to do one thing well — open and read files.</p>
+  </div>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">&#9889;</div>
+      <h3>Instant Open</h3>
+      <p>Double-click any file to view it instantly. No vault, no workspace, no project setup required.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#127912;</div>
+      <h3>Beautiful Preview</h3>
+      <p>Markdown renders with GFM tables, task lists, and syntax-highlighted code blocks. JSON auto-formats.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128193;</div>
+      <h3>Folder Browsing</h3>
+      <p>Open any directory as a workspace. Navigate through files with the sidebar tree view.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128396;</div>
+      <h3>Lightweight Editor</h3>
+      <p>Switch to edit mode for quick changes. Powered by CodeMirror 6 with full syntax support.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#127763;</div>
+      <h3>Dark & Light</h3>
+      <p>Follows your system theme automatically. Toggle manually anytime. Both themes are carefully crafted.</p>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">&#128220;</div>
+      <h3>Outline Navigation</h3>
+      <p>Auto-generated table of contents from your Markdown headings. Jump to any section instantly.</p>
+    </div>
+  </div>
+</section>
+
+<!-- Languages -->
+<section class="languages" id="languages">
+  <div class="languages-inner">
+    <h2>50+ languages. One app.</h2>
+    <p>From Markdown to Rust, from JSON to SQL. Rune highlights them all.</p>
+    <div class="lang-tags">
+      <span class="lang-tag highlight">.md</span>
+      <span class="lang-tag highlight">.json</span>
+      <span class="lang-tag">.ts</span>
+      <span class="lang-tag">.tsx</span>
+      <span class="lang-tag">.js</span>
+      <span class="lang-tag">.jsx</span>
+      <span class="lang-tag">.py</span>
+      <span class="lang-tag">.rs</span>
+      <span class="lang-tag">.go</span>
+      <span class="lang-tag">.c</span>
+      <span class="lang-tag">.cpp</span>
+      <span class="lang-tag">.java</span>
+      <span class="lang-tag">.swift</span>
+      <span class="lang-tag">.kt</span>
+      <span class="lang-tag">.rb</span>
+      <span class="lang-tag">.php</span>
+      <span class="lang-tag">.html</span>
+      <span class="lang-tag">.css</span>
+      <span class="lang-tag">.scss</span>
+      <span class="lang-tag">.yaml</span>
+      <span class="lang-tag">.toml</span>
+      <span class="lang-tag">.xml</span>
+      <span class="lang-tag">.sql</span>
+      <span class="lang-tag">.sh</span>
+      <span class="lang-tag">.lua</span>
+      <span class="lang-tag">.dart</span>
+      <span class="lang-tag">.scala</span>
+      <span class="lang-tag">.r</span>
+      <span class="lang-tag">.vue</span>
+      <span class="lang-tag">.graphql</span>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta">
+  <h2>Try Rune today.</h2>
+  <p>Free, lightweight, and built with care. Download and start reading files the way they were meant to be read.</p>
+  <div class="cta-actions">
+    <a href="https://github.com/ran2026zx/rune/releases/latest" class="btn btn-primary">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+      Download for Mac
+    </a>
+  </div>
+  <div class="install-cmd" onclick="navigator.clipboard.writeText('brew install --cask rune').then(() => this.querySelector('.dollar').textContent = '✓ Copied!')">
+    <span class="dollar">$</span> brew install --cask rune
+    <span style="color:var(--text-muted);font-size:12px">(coming soon)</span>
+  </div>
+</section>
+
+<!-- Footer -->
+<footer>
+  <p>
+    Built with <a href="https://v2.tauri.app">Tauri</a> + <a href="https://react.dev">React</a> + <a href="https://www.rust-lang.org">Rust</a><br>
+    <span style="margin-top:6px;display:inline-block">&copy; 2025 Rune</span>
+  </p>
+</footer>
+
+</body>
+</html>
